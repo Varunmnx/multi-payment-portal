@@ -31,7 +31,7 @@ export class LoggerService {
   /**
    * The name of the application.
    */
-  public static APPLICATION_NAME = 'reservation-ai-api-service';
+  public static APPLICATION_NAME =  process.env.SERVICE_NAME
 
   /**
    * ANSI escape codes for log colors.

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { ChatBotSocketConnectionService } from './services/chat-bot-socket-connection.service';
 import { ChatBotSocketConnectionGateway } from './gateways/chat-bot-socket-connection.gateway'; 
@@ -8,22 +9,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [HttpModule, MongooseModule.forFeature([ ])],
-  providers: [
-    // AuthService,
-    JwtService,
-    // UserRepository,
-    // UserProfileRepository,
-    // RefreshTokenRepository,
-    // WaitingListRepository,
-    LoggerService,
-    // ChatBotService,
-    // ChatBotRepository,
-    // ChatBotHistoryService,
-    // ChatBotHistoryRepository,
-    // ConnectedAccountsRepository,
-    // ApiKeyRepository,
-    ChatBotSocketConnectionGateway,
-    ChatBotSocketConnectionService,
+  providers: [ 
+    JwtService, 
+    LoggerService,  
   ],
 })
 export class SocketConnectionModule {}

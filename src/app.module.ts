@@ -1,10 +1,10 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './common/guards/roles.guard';
-import { LoggerService } from './common/logger/logger.service';
-import { AuthModule } from './auth/auth.module';
+// import { RolesGuard } from './common/guards/roles.guard';
+import { LoggerService } from './common/logger/logger.service'; 
 //env dependancy
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ENV } from './env';
@@ -19,22 +19,23 @@ import { MicroserviceEnvVariables } from './microserviceFactory.factory';
 @Module({
   imports: [    
   ConfigModule.forRoot({ isGlobal: true, envFilePath: ENV.envFileName()}),
-  MongooseModule.forRootAsync({
-    imports: [ConfigModule],
-    useFactory: async (configService: ConfigService): Promise<MongooseModuleFactoryOptions> => ({
-      uri: new MicroserviceEnvVariables(configService).MONGODB_DB_URL,
-    }),
-    inject: [ConfigService],
-  }),
-  AuthModule
+  // MongooseModule.forRootAsync({
+  //   imports: [ConfigModule],
+  //   useFactory: async (configService: ConfigService): Promise<MongooseModuleFactoryOptions> => ({
+  //     uri: new MicroserviceEnvVariables(configService).MONGODB_DB_URL,
+  //   }),
+  //   inject: [ConfigService],
+  // }),
+  // AuthModule
 ],
   controllers: [AppController],
   providers: [    
     LoggerService,
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },],
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RolesGuard,
+    // },
+  ],
 })
 export class AppModule {}
