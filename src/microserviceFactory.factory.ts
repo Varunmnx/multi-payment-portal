@@ -274,11 +274,13 @@ export class MicroserviceFactory {
   }
 
   static async enableCors() {
-    MicroserviceFactory._app.enableCors();
+    MicroserviceFactory._app.enableCors({
+      origin: ['*'],
+    });
   }
 
   static async listen() {
-    const port = MicroserviceFactory._envVariables.SERVICE_PORT;
+    const port = MicroserviceFactory._envVariables.SERVICE_PORT ?? 3333;
 
     MicroserviceFactory._app.listen(port, () => {
       MicroserviceFactory._loggerService.log('MAIN', 'Microservice is listening on ', port);
