@@ -275,7 +275,11 @@ export class MicroserviceFactory {
 
   static async enableCors() {
     MicroserviceFactory._app.enableCors({
-      origin: ['*'],
+      origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4800'],
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+      exposedHeaders: ['Content-Type', 'Authorization'],
     });
   }
 

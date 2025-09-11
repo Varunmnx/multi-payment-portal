@@ -11,6 +11,7 @@ import {
 import { Request } from 'express';
 import { RazorpayService } from '../service/razorpay.service';
 import { CreateRazorpayOrderDto } from '../dto/razorpay/create-payment.dto';
+import { VerifyPaymentDto } from '../dto/razorpay/verify-payment.dto';
 import { ValidationPipe } from '@nestjs/common';
 
 @Controller('razorpay')
@@ -46,6 +47,11 @@ export class RazorpayController {
     @Req() request: RawBodyRequest<Request>, // Required to access raw body for signature verification
     @Body() body: any,
   ) {
+    // Handle preflight requests
+    if (request.method === 'OPTIONS') {
+      return 'OK';
+    }
+
     const signature = request.headers['x-razorpay-signature'] as string;
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET; // Should match the one set in Razorpay dashboard
 
@@ -59,8 +65,6 @@ export class RazorpayController {
     if (!rawBody) {
       throw new Error('Empty raw body received');
     }
-
- 
 
     console.log('[Webhook] Received event:', body.event);
 
@@ -110,14 +114,14 @@ export class RazorpayController {
   }
 
   /**
-   * Optional: Verification endpoint for frontend success callback
+   * Verification endpoint for frontend success callback
    * Called after payment success (from frontend) to double-check and finalize
    */
   @Post('verify')
   async verifyPayment(
-    @Body() body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string },
+    @Body(new ValidationPipe({ transform: true })) verifyPaymentDto: VerifyPaymentDto,
   ) {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = verifyPaymentDto;
 
     const isVerified = await this.razorpayService.verifyPayment(
       razorpay_signature,

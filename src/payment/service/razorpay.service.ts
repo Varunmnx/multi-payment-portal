@@ -109,6 +109,6 @@ export class RazorpayService {
    * @returns A list of products.
    */
   getProducts() {
-    return this.products;
+    return Object.entries(this.products)?.map(([id, product]) => ({ id, ...product })) || [];
   }
 }

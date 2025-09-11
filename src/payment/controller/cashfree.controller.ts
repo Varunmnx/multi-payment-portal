@@ -12,11 +12,7 @@ export class CashfreeController {
   @Get('products')
   getProducts() {
     try {
-      return {
-        success: true,
-        data: this.cashfreeService.getProducts(),
-        message: 'Products fetched successfully',
-      };
+      return this.cashfreeService.getProducts();
     } catch (error) {
       throw new HttpException(
         {
@@ -33,11 +29,7 @@ export class CashfreeController {
   async createOrder(@Body() createOrderDto: CreateCashfreeOrderDto) {
     try {
       const order = await this.cashfreeService.createOrder(createOrderDto);
-      return {
-        success: true,
-        data: order,
-        message: 'Order created successfully',
-      };
+      return order;
     } catch (error) {
       throw new HttpException(
         {
