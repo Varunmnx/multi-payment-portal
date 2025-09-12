@@ -81,7 +81,8 @@ export class RazorpayService {
       const hmac = crypto.createHmac("sha256", process.env.RAZORPAY_API_KEY_SECRET);
       hmac.update(`${orderId}|${paymentId}`);
       const generatedSignature = hmac.digest("hex");
-      
+      console.log("generated signature",generatedSignature);
+      console.log("signature", signature);
       // Compare the generated signature with the signature provided by Razorpay.
       return generatedSignature === signature;
     } catch (error) {

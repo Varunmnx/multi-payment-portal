@@ -7,6 +7,7 @@ import {
   Req,
   RawBodyRequest,
   Header,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { RazorpayService } from '../service/razorpay.service';
@@ -121,8 +122,13 @@ export class RazorpayController {
   async verifyPayment(
     @Body(new ValidationPipe({ transform: true })) verifyPaymentDto: VerifyPaymentDto,
   ) {
+    console.log('[Verify] Verifying payment...',verifyPaymentDto);
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = verifyPaymentDto;
-
+  /**
+   * the hash of the razorpay_order_id, razorpay_payment_id and razorpay_signature
+   * calculated by you on the server side.
+   * order id is same as sent by the server it should match the razorpay signature generated to ensure same order id is been used
+   */
     const isVerified = await this.razorpayService.verifyPayment(
       razorpay_signature,
       razorpay_order_id,
@@ -130,7 +136,7 @@ export class RazorpayController {
     );
 
     if (!isVerified) {
-      throw new Error('Payment verification failed');
+      throw new BadRequestException('Payment verification failed');
     }
 
     // Fetch payment details after successful verification
