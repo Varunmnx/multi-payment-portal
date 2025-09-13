@@ -19,12 +19,15 @@ export class EmailService {
 
   private createTransporter() {
     const emailConfig = {
-      host: this.configService.get<string>('SMTP_HOST'),
-      port: this.configService.get<number>('SMTP_PORT', 587),
-      secure: this.configService.get<boolean>('SMTP_SECURE', false),
+      host: "smtp.gmail.com",
+      port: 587,            // STARTTLS port
+      secure: false,        // must be false for port 587
       auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASS'),
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD, // app password, not Gmail login password
+      },
+      tls: {
+        rejectUnauthorized: false, // optional, helps with some environments
       },
     };
 

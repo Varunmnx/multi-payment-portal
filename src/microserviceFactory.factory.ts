@@ -33,6 +33,7 @@ export class MicroserviceEnvKeys {
   public static readonly CASHFREE_APP_ID = 'CASHFREE_APP_ID';
   public static readonly CASH_FREE_BASE_URL = 'CASH_FREE_BASE_URL';
   public static readonly CASHFREE_APP_SECRET = 'CASHFREE_APP_SECRET';
+  public static readonly RAZORPAY_WEBHOOK_SECRET = 'RAZORPAY_WEBHOOK_SECRET';
 }
 
 export class MicroserviceEnvVariables {
@@ -51,6 +52,7 @@ export class MicroserviceEnvVariables {
   public readonly CASHFREE_APP_ID: string;
   public readonly CASH_FREE_BASE_URL: string;
   public readonly CASHFREE_APP_SECRET: string;
+  public readonly RAZORPAY_WEBHOOK_SECRET: string;
 
   constructor(configService: ConfigService) {
     this.SERVICE_PORT = toNumber(configService.get<number>(MicroserviceEnvKeys.SERVICE_PORT));
@@ -66,6 +68,7 @@ export class MicroserviceEnvVariables {
     this.CASHFREE_APP_ID = configService.get<string>(MicroserviceEnvKeys.CASHFREE_APP_ID);
     this.CASH_FREE_BASE_URL = configService.get<string>(MicroserviceEnvKeys.CASH_FREE_BASE_URL);
     this.CASHFREE_APP_SECRET = configService.get<string>(MicroserviceEnvKeys.CASHFREE_APP_SECRET);
+    this.RAZORPAY_WEBHOOK_SECRET = configService.get<string>(MicroserviceEnvKeys.RAZORPAY_WEBHOOK_SECRET);
   }
 }
 

@@ -2,13 +2,18 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
 import Razorpay from "razorpay";
 import { CreateRazorpayOrderDto } from "../dto/razorpay/create-payment.dto";
-import * as crypto from "crypto";
+import * as crypto from "crypto"; 
+import { RazorPayOrderPaidWebHookEvent } from "@/common/razorpay/webhook-dto/order-paid.event.dto";
+import { RazorPayWebhookEvent } from "@/common/razorpay/webhook-dto/payment.events";
+import { RazorpayPaymentCapturedWebhookEvent } from "@/common/razorpay/webhook-dto/payment-captured.event.dto";
+import { RazorpayPaymentFailedWebhookEvent } from "@/common/razorpay/webhook-dto/payment-failed.event.dto";
+import { EmailService } from "@/common/email/email.service";
 
 @Injectable()
 export class RazorpayService {
   private razorpayInstance: Razorpay;
 
-  constructor() {
+  constructor(private readonly emailService:EmailService) {
     // Initialize Razorpay with credentials from environment variables.
     // Ensure RAZORPAY_API_KEY_ID and RAZORPAY_API_KEY_SECRET are configured.
     if (!process.env.RAZORPAY_API_KEY_ID || !process.env.RAZORPAY_API_KEY_SECRET) {
@@ -112,4 +117,49 @@ export class RazorpayService {
   getProducts() {
     return Object.entries(this.products)?.map(([id, product]) => ({ id, ...product })) || [];
   }
+
+  handleWebhookEvents(data: RazorPayWebhookEvent){
+       switch (data?.event) {
+          // when an order is succesfully paid
+          case("order.paid"): {
+             return this.handlePaymentSuccessEvent(data);
+          }
+          // this is same as order when a payment is successful but payload differs
+          case("payment.captured"): {
+            return this.handlePaymentCapturedEvent(data);
+          }
+          // payment failed 
+          case("payment.failed"): {
+            return this.handlePaymentFailedEvent(data);
+          }
+       }
+  }
+
+
+  handlePaymentCapturedEvent(data:RazorpayPaymentCapturedWebhookEvent){
+    console.log("payment captured",data);
+  }
+  handlePaymentFailedEvent(data:RazorpayPaymentFailedWebhookEvent){ 
+    console.log("payment failed",data);
+  }
+  handlePaymentRefundEvent(){ }
+  handlePaymentSuccessEvent(data:RazorPayOrderPaidWebHookEvent){
+    console.log("payment success",data);
+    // send email
+    // send socket notification 
+    // update db 
+    if(data?.payload?.payment?.entity?.email) {
+       console.log("Sending email to",data?.payload?.payment?.entity?.email);
+       const payload = {
+        name: data?.payload?.payment?.entity?.email,
+        orderId: data?.payload?.payment?.entity?.order_id,
+        amount: data?.payload?.payment?.entity?.amount,
+        currency: data?.payload?.payment?.entity?.currency,
+        product: "dummy product",
+        transactionId: data?.payload?.payment?.entity?.id,
+        paymentDate: data?.payload?.payment?.entity?.created_at as unknown as string
+       }
+       this.emailService.sendPaymentConfirmation(data?.payload?.payment?.entity?.email,payload); 
+    }
+   }
 }

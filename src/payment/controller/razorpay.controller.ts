@@ -14,10 +14,14 @@ import { RazorpayService } from '../service/razorpay.service';
 import { CreateRazorpayOrderDto } from '../dto/razorpay/create-payment.dto';
 import { VerifyPaymentDto } from '../dto/razorpay/verify-payment.dto';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { MicroserviceEnvKeys } from '@/microserviceFactory.factory';
+import * as crypto from "crypto"; 
+
 
 @Controller('razorpay')
 export class RazorpayController {
-  constructor(private readonly razorpayService: RazorpayService) {}
+  constructor(private readonly razorpayService: RazorpayService, private readonly configService: ConfigService) { }
 
   /**
    * Create a new Razorpay order
@@ -52,47 +56,33 @@ export class RazorpayController {
     if (request.method === 'OPTIONS') {
       return 'OK';
     }
-
+    console.log("webhook_hit", request?.headers)
+    console.log("webhook_hit.body", body)
     const signature = request.headers['x-razorpay-signature'] as string;
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET; // Should match the one set in Razorpay dashboard
+    const secret = this.configService.getOrThrow<string>(MicroserviceEnvKeys.RAZORPAY_WEBHOOK_SECRET); // Should match the one set in Razorpay dashboard
 
     if (!signature || !secret) {
       throw new Error('Missing webhook signature or secret');
     }
 
     // Get raw body (must be buffered as string)
-    const rawBody = request.rawBody?.toString();
-
+    const rawBody = request.body?.toString()
+    console.log('[Webhook] Received event:', body.event);
     if (!rawBody) {
       throw new Error('Empty raw body received');
     }
-
-    console.log('[Webhook] Received event:', body.event);
+    const shasum = crypto.createHmac('sha256',secret);
+    shasum.update(JSON.stringify(body));
+    const digest = shasum.digest('hex');
+    console.log("digest", digest) 
+    console.log("signature", signature) 
+    if(digest !== signature){
+      throw new Error('Invalid signature');
+    }
+    console.log(")))))))VAlidated successfuly")
 
     // Process relevant events
-    switch (body.event) {
-      case 'payment.captured':
-        const payment = body.payload.payment.entity;
-        console.log(`[Webhook] Payment captured: ${payment.id}, Order ID: ${payment.order_id}`);
-        // TODO: Update your DB, mark order as paid, trigger email/invoice, etc.
-        await this.handlePaymentCaptured(payment);
-        break;
-
-      case 'order.paid':
-        console.log(`[Webhook] Order paid: ${body.payload.order.entity.id}`);
-        // Optional: handle order-level logic
-        break;
-
-      case 'subscription.activated':
-        console.log(`[Webhook] Subscription activated: ${body.payload.subscription.entity.id}`);
-        // Handle subscription activation
-        break;
-
-      // Add more cases as needed: refund.created, payment.failed, etc.
-
-      default:
-        console.log(`[Webhook] Unhandled event type: ${body.event}`);
-    }
+    this.razorpayService.handleWebhookEvents(body);
 
     // Acknowledge receipt
     return 'Webhook processed';
@@ -122,13 +112,13 @@ export class RazorpayController {
   async verifyPayment(
     @Body(new ValidationPipe({ transform: true })) verifyPaymentDto: VerifyPaymentDto,
   ) {
-    console.log('[Verify] Verifying payment...',verifyPaymentDto);
+    // console.log('[Verify] Verifying payment...',verifyPaymentDto);
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = verifyPaymentDto;
-  /**
-   * the hash of the razorpay_order_id, razorpay_payment_id and razorpay_signature
-   * calculated by you on the server side.
-   * order id is same as sent by the server it should match the razorpay signature generated to ensure same order id is been used
-   */
+    /**
+     * the hash of the razorpay_order_id, razorpay_payment_id and razorpay_signature
+     * calculated by you on the server side.
+     * order id is same as sent by the server it should match the razorpay signature generated to ensure same order id is been used
+     */
     const isVerified = await this.razorpayService.verifyPayment(
       razorpay_signature,
       razorpay_order_id,
@@ -143,7 +133,7 @@ export class RazorpayController {
     const paymentDetails = await this.razorpayService.fetchPaymentDetails(razorpay_payment_id);
 
     // You can now safely update your backend state
-    console.log('[Verify] Payment successful:', paymentDetails);
+    // console.log('[Verify] Payment successful:', paymentDetails);
 
     return {
       message: 'Payment verified successfully',
