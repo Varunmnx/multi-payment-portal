@@ -63,7 +63,8 @@ export class CashFreeService {
       },
       order_meta: {
         return_url: this.configService.get<string>('CASHFREE_RETURN_URL') || "http://localhost:5173/cashfree/payment/success",
-        notify_url: this.configService.get<string>('CASHFREE_WEBHOOK_URL') || "https://zion-unchallenging-annika.ngrok-free.app/api/payment-service/cashfree/webhook",
+        // i have 3 webhooks set in cashfree dashboard causing 3 emails to be send since its triggering 3 times the web hook
+        // notify_url: this.configService.get<string>('CASHFREE_WEBHOOK_URL') || "https://zion-unchallenging-annika.ngrok-free.app/api/payment-service/cashfree/webhook",
       },
     };
 
@@ -274,9 +275,9 @@ export class CashFreeService {
     this.logger.log(`[sendSuccessfulPaymentEmailNotification] payment: ${JSON.stringify(payment)}`);
     this.logger.log(`[sendSuccessfulPaymentEmailNotification] customerDetails: ${JSON.stringify(customerDetails)}`);
     try {
-       this.emailService.sendPaymentConfirmation(customerDetails.customer_email, { name: customerDetails?.customer_name, orderId, amount: 100, currency: 'INR', product: 'Product A', transactionId: paymentId, paymentDate: payment.payment_time });
+      return this.emailService.sendPaymentConfirmation(customerDetails.customer_email, { name: customerDetails?.customer_name, orderId, amount: 100, currency: 'INR', product: 'Product A', transactionId: paymentId, paymentDate: payment.payment_time });
     } catch (error) {
-      
+      console.log('[sendSuccessfulPaymentEmailNotification] error', error);
     }
   }
 }
