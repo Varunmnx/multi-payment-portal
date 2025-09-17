@@ -56,11 +56,7 @@ export class CashfreeController {
       }
 
       const orderStatus = await this.cashfreeService.getOrderStatus(orderId);
-      return {
-        success: true,
-        data: orderStatus,
-        message: 'Order status fetched successfully',
-      };
+      return orderStatus;
     } catch (error) {
       throw new HttpException(
         {

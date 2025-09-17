@@ -60,8 +60,8 @@ export class CashFreeService {
         customer_phone: customerPhone,
       },
       order_meta: {
-        return_url: this.configService.get<string>('CASHFREE_RETURN_URL') || "http://localhost:3001/payment/success",
-        notify_url: this.configService.get<string>('CASHFREE_WEBHOOK_URL') || "http://localhost:3001/cashfree/webhook",
+        return_url: this.configService.get<string>('CASHFREE_RETURN_URL') || "http://localhost:5173/cashfree/payment/success",
+        notify_url: this.configService.get<string>('CASHFREE_WEBHOOK_URL') || "https://zion-unchallenging-annika.ngrok-free.app/api/payment-service/cashfree/webhook",
       },
     };
 
