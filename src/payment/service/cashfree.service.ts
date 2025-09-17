@@ -5,6 +5,7 @@ import { CreateCashfreeOrderDto } from "../dto/cashfree/create-payment.dto";
 import { firstValueFrom } from "rxjs";
 import { ConfigService } from '@nestjs/config';
 import { AxiosError } from 'axios';
+import { EmailService } from "@/common/email/email.service";
 
 @Injectable()
 export class CashFreeService {
@@ -23,7 +24,8 @@ export class CashFreeService {
 
   constructor(
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService
   ) {
     this.cashfreeBaseUrl = this.configService.get<string>('CASHFREE_BASE_URL') || "https://sandbox.cashfree.com/pg";
     this.clientId = this.configService.get<string>('CASHFREE_APP_ID');
@@ -265,5 +267,16 @@ export class CashFreeService {
       return this.products[id];
     }
     throw new Error(`Product not found: ${id}`);
+  }
+
+  sendSuccessfulPaymentEmailNotification(orderId: string, paymentId: string,payment:any,customerDetails:any) {
+    this.logger.log(`Sending successful payment email notification for: ${orderId}/${paymentId}`);
+    this.logger.log(`[sendSuccessfulPaymentEmailNotification] payment: ${JSON.stringify(payment)}`);
+    this.logger.log(`[sendSuccessfulPaymentEmailNotification] customerDetails: ${JSON.stringify(customerDetails)}`);
+    try {
+       this.emailService.sendPaymentConfirmation(customerDetails.customer_email, { name: customerDetails?.customer_name, orderId, amount: 100, currency: 'INR', product: 'Product A', transactionId: paymentId, paymentDate: payment.payment_time });
+    } catch (error) {
+      
+    }
   }
 }

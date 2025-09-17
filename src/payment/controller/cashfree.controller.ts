@@ -138,6 +138,12 @@ export class CashfreeController {
         // - Update database
         // - Send confirmation email
         // - Activate subscription, etc.
+        this.cashfreeService.sendSuccessfulPaymentEmailNotification(
+          orderId,
+          paymentId,
+          data?.payment,
+          data?.customer_details,
+        );
       }
     } catch (error) {
       this.logger.error('Error processing payment success:', error);
