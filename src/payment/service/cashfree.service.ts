@@ -6,6 +6,7 @@ import { firstValueFrom } from "rxjs";
 import { ConfigService } from '@nestjs/config';
 import { AxiosError } from 'axios';
 import { EmailService } from "@/common/email/email.service";
+import { CashFreeWebHookEventType } from "@/common/cashfree/webhook/web-hook.event.dto";
 
 @Injectable()
 export class CashFreeService {
@@ -70,7 +71,7 @@ export class CashFreeService {
 
     try {
       const orderUrl = `${this.cashfreeBaseUrl}/orders`;
-      
+
       this.logger.log(`Creating order for product: ${productId}, amount: ₹${orderRequest.order_amount}`);
       this.logger.log(`Order request:`, JSON.stringify(orderRequest, null, 2));
 
@@ -116,7 +117,7 @@ export class CashFreeService {
   async getOrderStatus(orderId: string) {
     try {
       const orderUrl = `${this.cashfreeBaseUrl}/orders/${orderId}`;
-      
+
       this.logger.log(`Fetching order status for: ${orderId}`);
 
       const response = await firstValueFrom(
@@ -157,7 +158,7 @@ export class CashFreeService {
   async getPaymentDetails(orderId: string, paymentId: string) {
     try {
       const paymentUrl = `${this.cashfreeBaseUrl}/orders/${orderId}/payments/${paymentId}`;
-      
+
       this.logger.log(`Fetching payment details for: ${orderId}/${paymentId}`);
 
       const response = await firstValueFrom(
@@ -187,7 +188,7 @@ export class CashFreeService {
   async initiateRefund(orderId: string, refundAmount?: number, refundNote?: string) {
     try {
       const orderStatus = await this.getOrderStatus(orderId);
-      
+
       if (orderStatus.order_status !== 'PAID') {
         throw new Error('Order must be in PAID status to initiate refund');
       }
@@ -199,7 +200,7 @@ export class CashFreeService {
       };
 
       const refundUrl = `${this.cashfreeBaseUrl}/orders/${orderId}/refunds`;
-      
+
       this.logger.log(`Initiating refund for order: ${orderId}, amount: ${refundRequest.refund_amount}`);
 
       const response = await firstValueFrom(
@@ -270,7 +271,7 @@ export class CashFreeService {
     throw new Error(`Product not found: ${id}`);
   }
 
-  sendSuccessfulPaymentEmailNotification(orderId: string, paymentId: string,payment:any,customerDetails:any) {
+  sendSuccessfulPaymentEmailNotification(orderId: string, paymentId: string, payment: any, customerDetails: any) {
     this.logger.log(`Sending successful payment email notification for: ${orderId}/${paymentId}`);
     this.logger.log(`[sendSuccessfulPaymentEmailNotification] payment: ${JSON.stringify(payment)}`);
     this.logger.log(`[sendSuccessfulPaymentEmailNotification] customerDetails: ${JSON.stringify(customerDetails)}`);
@@ -278,6 +279,95 @@ export class CashFreeService {
       return this.emailService.sendPaymentConfirmation(customerDetails.customer_email, { name: customerDetails?.customer_name, orderId, amount: 100, currency: 'INR', product: 'Product A', transactionId: paymentId, paymentDate: payment.payment_time });
     } catch (error) {
       console.log('[sendSuccessfulPaymentEmailNotification] error', error);
+    }
+  }
+
+
+  async handleWebHookEvents(event: CashFreeWebHookEventType) {
+    const { type, data } = event;
+    switch (type) {
+      case 'PAYMENT_SUCCESS_WEBHOOK':
+        // Handle successful payment
+        this.logger.log('Payment successful for order:', data.order?.order_id);
+        this.logger.log('Payment ID:', data.payment?.cf_payment_id);
+        this.logger.log('Amount:', data.payment?.payment_amount);
+
+        // Here you can update your database, send emails, etc.
+        await this.handlePaymentSuccess(data);
+        break;
+
+      case 'PAYMENT_FAILED_WEBHOOK':
+        // Handle failed payment
+        this.logger.log('Payment failed for order:', data.order?.order_id);
+        this.logger.log('Failure reason:', data.payment?.payment_message);
+
+        await this.handlePaymentFailure(data);
+        break;
+
+      case 'PAYMENT_USER_DROPPED_WEBHOOK':
+        // Handle user dropped/cancelled payment
+        this.logger.log('Payment dropped by user for order:', data.order?.order_id);
+
+        await this.handlePaymentCancellation(data);
+        break;
+
+      default:
+        this.logger.log('Unhandled webhook event:', type);
+    }
+  }
+
+
+  private async handlePaymentSuccess(data: any) {
+    try {
+      const orderId = data.order?.order_id;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const paymentId = data.payment?.cf_payment_id;
+
+      // Verify payment status
+      const orderStatus = await this.getOrderStatus(orderId);
+
+      if (orderStatus.order_status === 'PAID') {
+        this.logger.log(`Payment verified for order: ${orderId}`);
+        // Add your business logic here:
+        // - Update database
+        // - Send confirmation email
+        // - Activate subscription, etc.
+        this.sendSuccessfulPaymentEmailNotification(
+          orderId,
+          paymentId,
+          data?.payment,
+          data?.customer_details,
+        );
+      }
+    } catch (error) {
+      this.logger.error('Error processing payment success:', error);
+    }
+  }
+
+  private async handlePaymentFailure(data: any) {
+    try {
+      const orderId = data.order?.order_id;
+
+      this.logger.log(`Processing payment failure for order: ${orderId}`);
+      // Add your failure handling logic here:
+      // - Update database
+      // - Send failure notification
+      // - Log for analysis, etc.
+    } catch (error) {
+      this.logger.error('Error processing payment failure:', error);
+    }
+  }
+
+  private async handlePaymentCancellation(data: any) {
+    try {
+      const orderId = data.order?.order_id;
+
+      this.logger.log(`Processing payment cancellation for order: ${orderId}`);
+      // Add your cancellation handling logic here:
+      // - Update database
+      // - Handle inventory, etc.
+    } catch (error) {
+      this.logger.error('Error processing payment cancellation:', error);
     }
   }
 }
